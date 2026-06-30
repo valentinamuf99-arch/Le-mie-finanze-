@@ -107,6 +107,7 @@ body{font-family:'Inter',-apple-system,system-ui,sans-serif;background:var(--bg)
 .debt-info{flex:1;min-width:0}.debt-name{font-size:14px;font-weight:600;color:var(--text)}.debt-desc{font-size:12px;color:var(--text-muted);margin-top:1px}
 .debt-amount{font-size:18px;font-weight:700;white-space:nowrap}
 .debt-actions{display:flex;gap:6px;margin-left:8px}
+.debt-card.debt-done{opacity:.55}.debt-card.debt-done .debt-name{text-decoration:line-through}.debt-card.debt-done .debt-amount{text-decoration:line-through}
 /* Risparmio */
 .progress-card{background:linear-gradient(135deg,#1e3a5f,#1e40af);border-radius:var(--radius);padding:24px;color:#fff;margin-bottom:20px}
 .progress-card .prog-label{font-size:13px;color:rgba(255,255,255,.7);font-weight:500}
@@ -283,13 +284,19 @@ const DD={
 };
 const DEFAULT_DEBTS=[{id:1,person:"Matteo Tonuzi",dir:"devo",amount:2000,note:"Prestito",date:"2026-06-01"}];
 
-function load(){try{const r=localStorage.getItem('finanze_v6');if(r){const d=JSON.parse(r);for(const m of(d.mesi||[])){const dd=d.dati[m];if(dd&&dd.fisse)dd.fisse.forEach(f=>{if(!f.s)f.s='p';if(f.ck===undefined)f.ck=false});if(dd&&dd.obMese===undefined)dd.obMese=0}if(!d.investments)d.investments=[];if(!d.saldoConto)d.saldoConto=7824;return d}}catch(e){}return{mesi:[...DEFAULT_MESI],dati:JSON.parse(JSON.stringify(DD)),obiettivo:15000,saldoConto:7824,debts:JSON.parse(JSON.stringify(DEFAULT_DEBTS)),nextDebtId:2,investments:[],nextInvId:1}}
-function save(){try{localStorage.setItem('finanze_v6',JSON.stringify(S))}catch(e){}}
+function load(){try{const r=localStorage.getItem('finanze_v7');if(r){const d=JSON.parse(r);for(const m of(d.mesi||[])){const dd=d.dati[m];if(dd&&dd.fisse)dd.fisse.forEach(f=>{if(!f.s)f.s='p';if(f.ck===undefined)f.ck=false});if(dd&&dd.obMese===undefined)dd.obMese=0;if(dd&&!dd.entrateList){dd.entrateList=[{n:'Stipendio',v:dd.entrate||0}]}}if(!d.investments)d.investments=[];if(!d.saldoConto)d.saldoConto=7824;if(d.debts)d.debts.forEach(x=>{if(x.ck===undefined)x.ck=false});return d}}catch(e){}
+  const base={mesi:[...DEFAULT_MESI],dati:JSON.parse(JSON.stringify(DD)),obiettivo:15000,saldoConto:7824,debts:JSON.parse(JSON.stringify(DEFAULT_DEBTS)),nextDebtId:2,investments:[],nextInvId:1};
+  for(const m of base.mesi){const dd=base.dati[m];if(dd&&!dd.entrateList){dd.entrateList=[{n:'Stipendio',v:dd.entrate||0}]}}
+  return base;
+}
+function save(){try{localStorage.setItem('finanze_v7',JSON.stringify(S))}catch(e){}}
 let S=load();let CHS={};
 
 const fmt=n=>new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(n||0);
 const fmtD=n=>new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR',minimumFractionDigits:2,maximumFractionDigits:2}).format(n||0);
 const tF=d=>d.fisse.reduce((a,x)=>a+(x.v||0),0);const tE=d=>d.extra.reduce((a,x)=>a+(x.v||0),0);
+const tEntr=d=>(d.entrateList||[]).reduce((a,x)=>a+(x.v||0),0);
+function getEntrate(d){return d.entrateList?tEntr(d):d.entrate||0}
 const tFP=d=>d.fisse.filter(x=>x.s==='p').reduce((a,x)=>a+(x.v||0),0);
 const tFC=d=>d.fisse.filter(x=>x.s==='c').reduce((a,x)=>a+(x.v||0),0);
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
@@ -305,12 +312,13 @@ const PIE_C=['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444','#06b6d4','#ec489
 function renderPanoramica(){
   document.getElementById('dateLabel').textContent=new Date().toLocaleDateString('it-IT',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   const m=document.getElementById('selMese').value,d=S.dati[m];if(!d)return;
-  const f=tF(d),e=tE(d),tot=f+e,net=d.entrate-tot;
+  const ent=getEntrate(d);
+  const f=tF(d),e=tE(d),tot=f+e,net=ent-tot;
   const mi=S.mesi.indexOf(m),prev=mi>0?S.dati[S.mesi[mi-1]]:null;let pctE='',pctS='';
-  if(prev){const pe=prev.entrate,pt=tF(prev)+tE(prev);if(pe>0){const p=Math.round((d.entrate-pe)/pe*100);pctE=p>=0?`<span class="kpi-tag tag-pos">+${p}%</span>`:`<span class="kpi-tag tag-neg">${p}%</span>`}if(pt>0){const p=Math.round((tot-pt)/pt*100);pctS=p<=0?`<span class="kpi-tag tag-pos">${p}%</span>`:`<span class="kpi-tag tag-neg">+${p}%</span>`}}
+  if(prev){const pe=getEntrate(prev),pt=tF(prev)+tE(prev);if(pe>0){const p=Math.round((ent-pe)/pe*100);pctE=p>=0?`<span class="kpi-tag tag-pos">+${p}%</span>`:`<span class="kpi-tag tag-neg">${p}%</span>`}if(pt>0){const p=Math.round((tot-pt)/pt*100);pctS=p<=0?`<span class="kpi-tag tag-pos">${p}%</span>`:`<span class="kpi-tag tag-neg">+${p}%</span>`}}
   const stimato=d.risparmio>0?d.risparmio+net:0;
   document.getElementById('kpiRow').innerHTML=`
-    <div class="kpi-card"><div class="icon-wrap green">💵</div><div class="kpi-label">Entrate</div><div class="kpi-value" style="color:var(--green)">${fmt(d.entrate)}</div>${pctE}</div>
+    <div class="kpi-card"><div class="icon-wrap green">💵</div><div class="kpi-label">Entrate</div><div class="kpi-value" style="color:var(--green)">${fmt(ent)}</div>${pctE}</div>
     <div class="kpi-card"><div class="icon-wrap red">🛒</div><div class="kpi-label">Spese totali</div><div class="kpi-value" style="color:var(--red)">${fmt(tot)}</div>${pctS}</div>
     <div class="kpi-card"><div class="icon-wrap blue">💰</div><div class="kpi-label">Inizio mese</div><div class="kpi-value">${fmt(d.risparmio)}</div></div>
     <div class="kpi-card"><div class="icon-wrap amber">🎯</div><div class="kpi-label">Fine mese stimata</div><div class="kpi-value" style="color:${stimato>=0?'var(--green)':'var(--red)'}">${fmt(stimato)}</div></div>`;
@@ -318,14 +326,17 @@ function renderPanoramica(){
   const keys=Object.keys(cm).filter(k=>cm[k]>0),vals=keys.map(k=>Math.round(cm[k]));
   if(CHS.pie)CHS.pie.destroy();CHS.pie=new Chart(document.getElementById('pieChart'),{type:'doughnut',data:{labels:keys,datasets:[{data:vals,backgroundColor:PIE_C.slice(0,keys.length),borderWidth:3,borderColor:'transparent',hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.label}: ${fmt(c.raw)}`}}}}});
   const tp=vals.reduce((a,b)=>a+b,0);document.getElementById('pieLegend').innerHTML=keys.map((k,i)=>`<span class="legend-item"><span class="legend-sq" style="background:${PIE_C[i]}"></span>${k} ${tp?Math.round(vals[i]/tp*100):0}%</span>`).join('');
-  const l6=S.mesi.slice(-6);if(CHS.bar)CHS.bar.destroy();CHS.bar=new Chart(document.getElementById('barChart'),{type:'bar',data:{labels:l6.map(m=>m.replace(' 2025',"'25").replace(' 2026',"'26")),datasets:[{label:'Entrate',data:l6.map(m=>Math.round(S.dati[m]?.entrate||0)),backgroundColor:'#10b981',borderRadius:6,barPercentage:.6},{label:'Spese',data:l6.map(m=>{const d=S.dati[m];return d?Math.round(tF(d)+tE(d)):0}),backgroundColor:'#ef4444',borderRadius:6,barPercentage:.6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${fmt(c.raw)}`}}},scales:{x:{ticks:{color:'#94a3b8',font:{size:11}},grid:{display:false}},y:{ticks:{color:'#94a3b8',callback:v=>fmt(v)},grid:{color:'rgba(148,163,184,.1)'}}}}});
-  if(CHS.line)CHS.line.destroy();CHS.line=new Chart(document.getElementById('lineChart'),{type:'line',data:{labels:S.mesi.map(m=>m.replace(' 2025',"'25").replace(' 2026',"'26")),datasets:[{label:'Entrate',data:S.mesi.map(m=>Math.round(S.dati[m]?.entrate||0)),borderColor:'#10b981',backgroundColor:'rgba(16,185,129,.06)',tension:.35,fill:true,pointRadius:3,pointBackgroundColor:'#10b981'},{label:'Spese',data:S.mesi.map(m=>{const d=S.dati[m];return d?Math.round(tF(d)+tE(d)):0}),borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.06)',tension:.35,fill:true,pointRadius:3,pointBackgroundColor:'#ef4444'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${fmt(c.raw)}`}}},scales:{x:{ticks:{color:'#94a3b8',font:{size:10},maxRotation:45},grid:{display:false}},y:{ticks:{color:'#94a3b8',callback:v=>fmt(v)},grid:{color:'rgba(148,163,184,.08)'}}}}});
+  const l6=S.mesi.slice(-6);if(CHS.bar)CHS.bar.destroy();CHS.bar=new Chart(document.getElementById('barChart'),{type:'bar',data:{labels:l6.map(m=>m.replace(' 2025',"'25").replace(' 2026',"'26")),datasets:[{label:'Entrate',data:l6.map(m=>Math.round(S.dati[m]?getEntrate(S.dati[m]):0)),backgroundColor:'#10b981',borderRadius:6,barPercentage:.6},{label:'Spese',data:l6.map(m=>{const d=S.dati[m];return d?Math.round(tF(d)+tE(d)):0}),backgroundColor:'#ef4444',borderRadius:6,barPercentage:.6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${fmt(c.raw)}`}}},scales:{x:{ticks:{color:'#94a3b8',font:{size:11}},grid:{display:false}},y:{ticks:{color:'#94a3b8',callback:v=>fmt(v)},grid:{color:'rgba(148,163,184,.1)'}}}}});
+  if(CHS.line)CHS.line.destroy();CHS.line=new Chart(document.getElementById('lineChart'),{type:'line',data:{labels:S.mesi.map(m=>m.replace(' 2025',"'25").replace(' 2026',"'26")),datasets:[{label:'Entrate',data:S.mesi.map(m=>Math.round(S.dati[m]?getEntrate(S.dati[m]):0)),borderColor:'#10b981',backgroundColor:'rgba(16,185,129,.06)',tension:.35,fill:true,pointRadius:3,pointBackgroundColor:'#10b981'},{label:'Spese',data:S.mesi.map(m=>{const d=S.dati[m];return d?Math.round(tF(d)+tE(d)):0}),borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.06)',tension:.35,fill:true,pointRadius:3,pointBackgroundColor:'#ef4444'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${fmt(c.raw)}`}}},scales:{x:{ticks:{color:'#94a3b8',font:{size:10},maxRotation:45},grid:{display:false}},y:{ticks:{color:'#94a3b8',callback:v=>fmt(v)},grid:{color:'rgba(148,163,184,.08)'}}}}});
 }
 
 /* ═══ DETTAGLIO MESE ═══ */
 function renderMese(){
   const m=document.getElementById('selMese2').value,d=S.dati[m];if(!d)return;
-  const f=tF(d),e=tE(d),fp=tFP(d),fc=tFC(d),tot=f+e,net=d.entrate-tot;
+  if(!d.entrateList)d.entrateList=[{n:'Stipendio',v:d.entrate||0}];
+  const ent=tEntr(d);
+  d.entrate=ent; // keep in sync
+  const f=tF(d),e=tE(d),fp=tFP(d),fc=tFC(d),tot=f+e,net=ent-tot;
   const stimato=d.risparmio>0?d.risparmio+net:0;
 
   // KPI row
@@ -335,12 +346,12 @@ function renderMese(){
     <div class="kpi-card"><div class="icon-wrap amber">🎯</div><div class="kpi-label">Fine mese stimata</div><div class="kpi-value" style="color:${stimato>=0?'var(--green)':'var(--red)'}">${fmt(stimato)}</div></div>
   </div>`;
 
-  // Entrate section with inline add
-  document.getElementById('meseEntrate').innerHTML=`<div class="card">
-    <div class="expense-group-header"><span class="expense-group-title">💵Entrate</span><span class="expense-group-total" style="color:var(--green)">${fmt(d.entrate)}</span></div>
-    <div class="quick-add"><input type="text" class="form-input" id="addIncDesc" placeholder="Descrizione (es. Stipendio, Vinted...)"><input type="number" class="form-input amt-input" id="addIncAmt" placeholder="€" min="0" step="0.01"><button class="btn sm primary" onclick="addIncome('${m}')">+</button></div>
-    <p style="font-size:11px;color:var(--text-muted);margin-top:6px">Le entrate vengono sommate al totale. Per modificare il totale direttamente, cambia il valore sopra.</p>
-  </div>`;
+  // Entrate as list
+  let hE=`<div class="card"><div class="expense-group"><div class="expense-group-header"><span class="expense-group-title">💵 Entrate</span><span class="expense-group-total" style="color:var(--green)">${fmt(ent)}</span></div>`;
+  d.entrateList.forEach((x,i)=>{hE+=`<div class="expense-row" id="inr_${i}">${iconHtml(x.n)}<span class="expense-name">${x.n}</span><span class="expense-amt" style="color:var(--green)">+${fmtD(x.v)}</span><button class="expense-edit" onclick="editIncome('${m}',${i})">✏️</button><button class="expense-del" onclick="delIncome('${m}',${i})">✕</button></div>`});
+  if(!d.entrateList.length)hE+=`<div class="empty-state">📭 Nessuna entrata</div>`;
+  hE+=`</div><div class="quick-add"><input type="text" class="form-input" id="addIncDesc" placeholder="Es. Stipendio, Vinted, Rimborso..."><input type="number" class="form-input amt-input" id="addIncAmt" placeholder="€" min="0" step="0.01"><button class="btn sm primary" onclick="addIncome('${m}')">+</button></div></div>`;
+  document.getElementById('meseEntrate').innerHTML=hE;
 
   // Fisse
   const fP=d.fisse.filter(x=>x.s==='p'),fC=d.fisse.filter(x=>x.s==='c');
@@ -382,7 +393,10 @@ function renderFG(mese,title,icon,items,total,d){
 function toggleCk(m,i){S.dati[m].fisse[i].ck=!S.dati[m].fisse[i].ck;save();renderMese()}
 function del(m,t,i){if(t==='f')S.dati[m].fisse.splice(i,1);else S.dati[m].extra.splice(i,1);save();renderMese();toast('Eliminata')}
 function saveRisp(m){const v=parseFloat(document.getElementById('editRisp').value);if(!isNaN(v)){S.dati[m].risparmio=v;save();renderMese();toast('Aggiornato')}}
-function addIncome(m){const desc=document.getElementById('addIncDesc').value.trim(),amt=parseFloat(document.getElementById('addIncAmt').value);if(!amt||amt<=0){toast('Inserisci un importo');return}S.dati[m].entrate+=amt;save();document.getElementById('addIncDesc').value='';document.getElementById('addIncAmt').value='';renderMese();toast(`+ ${fmtD(amt)} entrata`)}
+function addIncome(m){const desc=document.getElementById('addIncDesc').value.trim()||'Entrata',amt=parseFloat(document.getElementById('addIncAmt').value);if(!amt||amt<=0){toast('Inserisci un importo');return}if(!S.dati[m].entrateList)S.dati[m].entrateList=[];S.dati[m].entrateList.push({n:desc,v:amt});S.dati[m].entrate=tEntr(S.dati[m]);save();document.getElementById('addIncDesc').value='';document.getElementById('addIncAmt').value='';renderMese();toast(`+ ${fmtD(amt)} entrata`)}
+function delIncome(m,i){S.dati[m].entrateList.splice(i,1);S.dati[m].entrate=tEntr(S.dati[m]);save();renderMese();toast('Entrata eliminata')}
+function editIncome(m,i){const x=S.dati[m].entrateList[i];const row=document.getElementById('inr_'+i);if(!row)return;row.innerHTML=`<div class="inline-edit" style="width:100%"><input type="text" class="form-input" value="${x.n}" id="eiN${i}" style="flex:1"><input type="number" class="form-input" value="${x.v}" id="eiV${i}" step="0.01" style="max-width:90px"><button class="btn sm primary" onclick="saveEditI('${m}',${i})">✓</button><button class="btn sm" onclick="renderMese()">✕</button></div>`}
+function saveEditI(m,i){const n=document.getElementById('eiN'+i).value.trim(),v=parseFloat(document.getElementById('eiV'+i).value);if(n&&!isNaN(v)&&v>0){S.dati[m].entrateList[i].n=n;S.dati[m].entrateList[i].v=v;S.dati[m].entrate=tEntr(S.dati[m]);save();renderMese();toast('Modificata')}}
 function addFissa(m){const s=document.getElementById('addFSrc').value,desc=document.getElementById('addFDesc').value.trim(),amt=parseFloat(document.getElementById('addFAmt').value);if(!desc||!amt||amt<=0){toast('Compila tutti i campi');return}S.dati[m].fisse.push({n:desc,v:amt,s,ck:false});save();document.getElementById('addFDesc').value='';document.getElementById('addFAmt').value='';renderMese();toast('Spesa fissa aggiunta')}
 function addExtra(m){const desc=document.getElementById('addEDesc').value.trim(),amt=parseFloat(document.getElementById('addEAmt').value);if(!desc||!amt||amt<=0){toast('Compila tutti i campi');return}S.dati[m].extra.push({n:desc,v:amt});save();document.getElementById('addEDesc').value='';document.getElementById('addEAmt').value='';renderMese();toast('Spesa extra aggiunta')}
 function editFissa(m,i){const x=S.dati[m].fisse[i];const nn=prompt('Nome:',x.n);if(nn===null)return;const nv=prompt('Importo:',x.v);if(nv===null)return;const v=parseFloat(nv);if(nn.trim()&&!isNaN(v)&&v>0){x.n=nn.trim();x.v=v;save();renderMese();toast('Modificata')}}
@@ -390,10 +404,11 @@ function editExtra(m,i){const x=S.dati[m].extra[i];const nn=prompt('Nome:',x.n);
 function saveObMese(m){const v=parseFloat(document.getElementById('editObMese').value)||0;S.dati[m].obMese=v;save();renderMese();toast('Obiettivo mese salvato')}
 
 /* ═══ NUOVO MESE ═══ */
-function addMese(){const nome=document.getElementById('newMeseNome').value.trim(),ent=parseFloat(document.getElementById('newMeseEntrate').value)||0,risp=parseFloat(document.getElementById('newMeseRisp').value)||0,obM=parseFloat(document.getElementById('newMeseOb').value)||0;if(!nome){toast('Inserisci il nome');return}if(S.mesi.includes(nome)){toast('Mese esistente');return}S.mesi.push(nome);S.dati[nome]={entrate:ent,fisse:[],extra:[],risparmio:risp,obiettivo:0,obMese:obM};save();fillSelects();document.getElementById('newMeseNome').value='';document.getElementById('newMeseEntrate').value='';document.getElementById('newMeseRisp').value='';document.getElementById('newMeseOb').value='';toast(`"${nome}" creato!`)}
+function addMese(){const nome=document.getElementById('newMeseNome').value.trim(),ent=parseFloat(document.getElementById('newMeseEntrate').value)||0,risp=parseFloat(document.getElementById('newMeseRisp').value)||0,obM=parseFloat(document.getElementById('newMeseOb').value)||0;if(!nome){toast('Inserisci il nome');return}if(S.mesi.includes(nome)){toast('Mese esistente');return}S.mesi.push(nome);S.dati[nome]={entrate:ent,entrateList:ent>0?[{n:'Stipendio',v:ent}]:[],fisse:[],extra:[],risparmio:risp,obiettivo:0,obMese:obM};save();fillSelects();document.getElementById('newMeseNome').value='';document.getElementById('newMeseEntrate').value='';document.getElementById('newMeseRisp').value='';document.getElementById('newMeseOb').value='';toast(`"${nome}" creato!`)}
 
 /* ═══ DEBITI ═══ */
-function renderDebiti(){const debts=S.debts||[];const ioDevo=debts.filter(d=>d.dir==='devo').reduce((a,d)=>a+d.amount,0);const miDevono=debts.filter(d=>d.dir==='devono').reduce((a,d)=>a+d.amount,0);document.getElementById('debtSummary').innerHTML=`<div class="kpi-card"><div class="icon-wrap red">↗️</div><div class="kpi-label">Devo a qualcuno</div><div class="kpi-value" style="color:var(--red)">${fmt(ioDevo)}</div></div><div class="kpi-card"><div class="icon-wrap green">↙️</div><div class="kpi-label">Mi devono</div><div class="kpi-value" style="color:var(--green)">${fmt(miDevono)}</div></div>`;let h='';if(!debts.length)h=`<div class="card"><div class="empty-state">🔄Nessun debito</div></div>`;debts.forEach((d,i)=>{const is=d.dir==='devo',ini=d.person.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);const dueStr=d.due?new Date(d.due).toLocaleDateString('it-IT',{day:'numeric',month:'short',year:'numeric'}):'';h+=`<div class="debt-card"><div class="debt-avatar" style="background:linear-gradient(135deg,${is?'#ef4444,#f97316':'#10b981,#06b6d4'});color:#fff">${ini}</div><div class="debt-info"><div class="debt-name">${d.person}</div><div class="debt-desc">${is?'Devo':'Mi deve'}${d.note?' — '+d.note:''}</div>${dueStr?`<div class="debt-due">📅 Scadenza: ${dueStr}</div>`:''}</div><div class="debt-amount" style="color:${is?'var(--red)':'var(--green)'}">${is?'-':'+'} ${fmt(d.amount)}</div><div class="debt-actions"><button class="btn sm" onclick="editDebt(${i})" style="font-size:13px">✏️</button><button class="btn sm danger" onclick="delDebt(${i})">🗑</button></div></div>`});document.getElementById('debtList').innerHTML=h}
+function renderDebiti(){const debts=S.debts||[];const ioDevo=debts.filter(d=>d.dir==='devo'&&!d.ck).reduce((a,d)=>a+d.amount,0);const miDevono=debts.filter(d=>d.dir==='devono'&&!d.ck).reduce((a,d)=>a+d.amount,0);document.getElementById('debtSummary').innerHTML=`<div class="kpi-card"><div class="icon-wrap red">↗️</div><div class="kpi-label">Devo a qualcuno</div><div class="kpi-value" style="color:var(--red)">${fmt(ioDevo)}</div></div><div class="kpi-card"><div class="icon-wrap green">↙️</div><div class="kpi-label">Mi devono</div><div class="kpi-value" style="color:var(--green)">${fmt(miDevono)}</div></div>`;let h='';if(!debts.length)h=`<div class="card"><div class="empty-state">🔄Nessun debito</div></div>`;debts.forEach((d,i)=>{const is=d.dir==='devo',ini=d.person.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);const dueStr=d.due?new Date(d.due).toLocaleDateString('it-IT',{day:'numeric',month:'short',year:'numeric'}):'';h+=`<div class="debt-card${d.ck?' debt-done':''}" id="debt_${i}"><button class="ck${d.ck?' on':''}" onclick="toggleDebt(${i})" style="flex-shrink:0">${d.ck?'✓':''}</button><div class="debt-avatar" style="background:linear-gradient(135deg,${is?'#ef4444,#f97316':'#10b981,#06b6d4'});color:#fff">${ini}</div><div class="debt-info"><div class="debt-name">${d.person}</div><div class="debt-desc">${is?'Devo':'Mi deve'}${d.note?' — '+d.note:''}${d.ck?' — ✅ Saldato':''}</div>${dueStr?`<div class="debt-due">📅 Scadenza: ${dueStr}</div>`:''}</div><div class="debt-amount" style="color:${is?'var(--red)':'var(--green)'}">${is?'-':'+'} ${fmt(d.amount)}</div><div class="debt-actions"><button class="btn sm" onclick="editDebt(${i})" style="font-size:13px">✏️</button><button class="btn sm danger" onclick="delDebt(${i})">🗑</button></div></div>`});document.getElementById('debtList').innerHTML=h}
+function toggleDebt(i){S.debts[i].ck=!S.debts[i].ck;save();renderDebiti();toast(S.debts[i].ck?'Segnato come saldato':'Riaperto')}
 function addDebt(){const person=document.getElementById('debtPerson').value.trim(),dir=document.getElementById('debtDir').value,amt=parseFloat(document.getElementById('debtAmt').value),note=document.getElementById('debtNote').value.trim(),due=document.getElementById('debtDue').value||'';if(!person||isNaN(amt)||amt<=0){toast('Compila persona e importo');return}if(!S.debts)S.debts=[];S.debts.push({id:S.nextDebtId++,person,dir,amount:amt,note,due,date:new Date().toISOString().slice(0,10)});save();renderDebiti();document.getElementById('debtPerson').value='';document.getElementById('debtAmt').value='';document.getElementById('debtNote').value='';document.getElementById('debtDue').value='';toast('Aggiunto!')}
 function delDebt(i){S.debts.splice(i,1);save();renderDebiti();toast('Eliminato')}
 function editDebt(i){const d=S.debts[i];const nn=prompt('Persona:',d.person);if(nn===null)return;const na=prompt('Importo:',d.amount);if(na===null)return;const nNote=prompt('Nota:',d.note||'');if(nNote===null)return;const nDue=prompt('Scadenza (YYYY-MM-DD):',d.due||'');const v=parseFloat(na);if(nn.trim()&&!isNaN(v)&&v>0){d.person=nn.trim();d.amount=v;d.note=nNote;if(nDue!==null)d.due=nDue;save();renderDebiti();toast('Modificato')}}
