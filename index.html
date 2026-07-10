@@ -129,6 +129,17 @@ body{font-family:'Inter',-apple-system,system-ui,sans-serif;background:var(--bg)
 .mb-14{margin-bottom:14px}.mb-20{margin-bottom:20px}.mt-10{margin-top:10px}
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:700px){.grid-2{grid-template-columns:1fr}}
 .form-card{max-width:540px}
+.goal-banner{background:var(--surface);border:1.5px solid var(--blue);border-radius:var(--radius);padding:16px 20px;margin-bottom:16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.goal-banner .goal-main{flex:1;min-width:200px}
+.goal-banner .goal-label{font-size:12px;color:var(--text-sec);font-weight:600}
+.goal-banner .goal-target{font-size:13px;color:var(--text-muted);margin-top:2px}
+.goal-banner .goal-value{font-size:26px;font-weight:700;margin-top:4px}
+.goal-banner .goal-vs{display:flex;gap:20px;align-items:center;flex-wrap:wrap}
+.goal-banner .goal-box{text-align:center;min-width:90px}
+.goal-banner .goal-box-label{font-size:11px;color:var(--text-muted);font-weight:500}
+.goal-banner .goal-box-val{font-size:18px;font-weight:700;margin-top:2px}
+.goal-banner .goal-bar-wrap{width:100%;height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;margin-top:10px}
+.goal-banner .goal-bar-fill{height:100%;border-radius:3px;transition:width .4s}
 .expense-edit{opacity:0;background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:14px;padding:2px 6px;border-radius:4px;transition:all .1s}
 .expense-row:hover .expense-edit{opacity:1}.expense-edit:hover{color:var(--blue);background:var(--blue-bg)}
 .inline-edit{display:flex;gap:6px;align-items:center;padding:6px 8px;background:var(--blue-bg);border-radius:var(--radius-sm);margin:4px 0}
@@ -161,6 +172,7 @@ body{font-family:'Inter',-apple-system,system-ui,sans-serif;background:var(--bg)
   <!-- PANORAMICA -->
   <div id="panoramica" class="section active">
     <div class="page-header"><div><h2>Panoramica</h2><p class="subtitle" id="dateLabel"></p></div><div class="header-actions"><select class="month-select" id="selMese" onchange="renderPanoramica()"></select></div></div>
+    <div id="panGoal"></div>
     <div class="kpi-grid" id="kpiRow"></div>
     <div class="charts-grid">
       <div class="card" style="margin:0"><div class="card-header"><span class="card-title">Distribuzione spese</span></div><div class="chart-wrap"><canvas id="pieChart"></canvas></div><div class="legend" id="pieLegend"></div></div>
@@ -171,6 +183,7 @@ body{font-family:'Inter',-apple-system,system-ui,sans-serif;background:var(--bg)
   <!-- DETTAGLIO -->
   <div id="dettaglio" class="section">
     <div class="page-header"><div><h2>Dettaglio mese</h2><p class="subtitle">Gestisci entrate, spese fisse e extra</p></div><div class="header-actions"><select class="month-select" id="selMese2" onchange="renderMese()"></select></div></div>
+    <div id="meseGoal"></div>
     <div id="meseKpi"></div>
     <div id="meseEntrate"></div>
     <div id="meseFisse"></div>
@@ -323,6 +336,10 @@ function renderPanoramica(){
   const mi=S.mesi.indexOf(m),prev=mi>0?S.dati[S.mesi[mi-1]]:null;let pctE='',pctS='';
   if(prev){const pe=getEntrate(prev),pt=tF(prev)+tE(prev);if(pe>0){const p=Math.round((ent-pe)/pe*100);pctE=p>=0?`<span class="kpi-tag tag-pos">+${p}%</span>`:`<span class="kpi-tag tag-neg">${p}%</span>`}if(pt>0){const p=Math.round((tot-pt)/pt*100);pctS=p<=0?`<span class="kpi-tag tag-pos">${p}%</span>`:`<span class="kpi-tag tag-neg">+${p}%</span>`}}
   const stimato=d.risparmio>0?d.risparmio+net:0;
+  // Goal banner
+  const obM=d.obMese||0;const targetFine=d.risparmio+obM;const gdiff=stimato-targetFine;
+  if(obM>0){const gp=targetFine>0?Math.min(100,Math.max(0,Math.round(stimato/targetFine*100))):0;
+    document.getElementById('panGoal').innerHTML=`<div class="goal-banner"><div class="goal-main"><div class="goal-label">🎯 Obiettivo fine mese</div><div class="goal-target">${fmt(d.risparmio)} inizio + ${fmt(obM)} risparmio</div><div class="goal-value" style="color:var(--blue)">${fmt(targetFine)}</div></div><div class="goal-vs"><div class="goal-box"><div class="goal-box-label">Stimata attuale</div><div class="goal-box-val" style="color:${stimato>=targetFine?'var(--green)':'var(--red)'}">${fmt(stimato)}</div></div><div class="goal-box"><div class="goal-box-label">${gdiff>=0?'Sopra':'Sotto'} obiettivo</div><div class="goal-box-val" style="color:${gdiff>=0?'var(--green)':'var(--red)'}">${gdiff>=0?'+':''}${fmt(gdiff)}</div></div></div><div class="goal-bar-wrap"><div class="goal-bar-fill" style="width:${gp}%;background:${stimato>=targetFine?'var(--green)':'var(--red)'}"></div></div></div>`}else{document.getElementById('panGoal').innerHTML=''}
   document.getElementById('kpiRow').innerHTML=`
     <div class="kpi-card"><div class="icon-wrap green">💵</div><div class="kpi-label">Entrate</div><div class="kpi-value" style="color:var(--green)">${fmt(ent)}</div>${pctE}</div>
     <div class="kpi-card"><div class="icon-wrap red">🛒</div><div class="kpi-label">Spese totali</div><div class="kpi-value" style="color:var(--red)">${fmt(tot)}</div>${pctS}</div>
@@ -344,6 +361,11 @@ function renderMese(){
   d.entrate=ent; // keep in sync
   const f=tF(d),e=tE(d),fp=tFP(d),fc=tFC(d),tot=f+e,net=ent-tot;
   const stimato=d.risparmio>0?d.risparmio+net:0;
+
+  // Goal banner
+  const obM=d.obMese||0;const targetFine=d.risparmio+obM;const gdiff=stimato-targetFine;
+  if(obM>0){const gp=targetFine>0?Math.min(100,Math.max(0,Math.round(stimato/targetFine*100))):0;
+    document.getElementById('meseGoal').innerHTML=`<div class="goal-banner"><div class="goal-main"><div class="goal-label">🎯 Obiettivo fine mese</div><div class="goal-target">${fmt(d.risparmio)} inizio + ${fmt(obM)} risparmio</div><div class="goal-value" style="color:var(--blue)">${fmt(targetFine)}</div></div><div class="goal-vs"><div class="goal-box"><div class="goal-box-label">Stimata attuale</div><div class="goal-box-val" style="color:${stimato>=targetFine?'var(--green)':'var(--red)'}">${fmt(stimato)}</div></div><div class="goal-box"><div class="goal-box-label">${gdiff>=0?'Sopra':'Sotto'} obiettivo</div><div class="goal-box-val" style="color:${gdiff>=0?'var(--green)':'var(--red)'}">${gdiff>=0?'+':''}${fmt(gdiff)}</div></div></div><div class="goal-bar-wrap"><div class="goal-bar-fill" style="width:${gp}%;background:${stimato>=targetFine?'var(--green)':'var(--red)'}"></div></div></div>`}else{document.getElementById('meseGoal').innerHTML=''}
 
   // KPI row
   document.getElementById('meseKpi').innerHTML=`<div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px">
