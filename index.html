@@ -46,8 +46,8 @@ body{font-family:'Inter',-apple-system,system-ui,sans-serif;background:var(--bg)
 .month-select{padding:8px 32px 8px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);font-size:13px;font-family:inherit;font-weight:500;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
 .month-select:focus{border-color:var(--blue);outline:none}
 .section{display:none}.section.active{display:block}
-.kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:24px}
-@media(max-width:900px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:480px){.kpi-grid{grid-template-columns:1fr}}
+.kpi-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;margin-bottom:24px}
+@media(max-width:900px){.kpi-grid{grid-template-columns:repeat(3,1fr)}}@media(max-width:480px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
 .kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;position:relative;overflow:hidden}
 .kpi-card .icon-wrap{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:12px}
 .kpi-card .icon-wrap.blue{background:var(--blue-bg);color:var(--blue)}.kpi-card .icon-wrap.green{background:var(--green-bg);color:var(--green)}.kpi-card .icon-wrap.red{background:var(--red-bg);color:var(--red)}.kpi-card .icon-wrap.amber{background:var(--amber-bg);color:var(--amber)}.kpi-card .icon-wrap.purple{background:var(--purple-bg);color:var(--purple)}
@@ -161,11 +161,6 @@ body{font-family:'Inter',-apple-system,system-ui,sans-serif;background:var(--bg)
     <button class="nav-item" onclick="go('dettaglio',this)"><span style="width:22px;text-align:center;flex-shrink:0">📋</span> Dettaglio mese</button>
     <button class="nav-item" onclick="go('aggiungi',this)"><span style="width:22px;text-align:center;flex-shrink:0">➕</span> Nuovo mese</button>
   </div>
-  <div class="sidebar-section"><div class="sidebar-label">Finanze</div>
-    <button class="nav-item" onclick="go('debiti',this)"><span style="width:22px;text-align:center;flex-shrink:0">🔄</span> Debiti e prestiti</button>
-    <button class="nav-item" onclick="go('investimenti',this)"><span style="width:22px;text-align:center;flex-shrink:0">📈</span> Investimenti</button>
-    <button class="nav-item" onclick="go('risparmio',this)"><span style="width:22px;text-align:center;flex-shrink:0">🎯</span> Risparmio casa</button>
-  </div>
   <div class="sidebar-footer"><div class="user-card"><div class="avatar">EU</div><div class="user-info"><div class="name">Eugenia</div><div class="role">Dati salvati localmente</div></div></div></div>
 </aside>
 <main class="main">
@@ -202,41 +197,6 @@ body{font-family:'Inter',-apple-system,system-ui,sans-serif;background:var(--bg)
     </div>
   </div>
   <!-- DEBITI -->
-  <div id="debiti" class="section">
-    <div class="page-header"><div><h2>Debiti e prestiti</h2><p class="subtitle">Traccia i soldi prestati e dovuti</p></div></div>
-    <div class="grid-2 mb-20" id="debtSummary"></div>
-    <div id="debtList"></div>
-    <div class="card form-card mt-10">
-      <div class="card-header"><span class="card-title">Aggiungi debito / prestito</span></div>
-      <div class="form-grid"><div class="form-group"><label>Persona</label><input type="text" class="form-input" id="debtPerson" placeholder="Es. Matteo Tonuzi"></div><div class="form-group"><label>Direzione</label><select class="form-input" id="debtDir"><option value="devo">Devo a questa persona</option><option value="devono">Questa persona mi deve</option></select></div></div>
-      <div class="form-grid"><div class="form-group"><label>Importo (€)</label><input type="number" class="form-input" id="debtAmt" placeholder="0.00" min="0" step="0.01"></div><div class="form-group"><label>Nota</label><input type="text" class="form-input" id="debtNote" placeholder="Es. Prestito per vacanza"></div></div>
-      <div class="form-grid"><div class="form-group"><label>Scadenza</label><input type="date" class="form-input" id="debtDue"></div><div></div></div>
-      <div class="btn-row"><button class="btn primary" onclick="addDebt()">+Aggiungi</button></div>
-    </div>
-  </div>
-  <!-- INVESTIMENTI -->
-  <div id="investimenti" class="section">
-    <div class="page-header"><div><h2>Investimenti</h2><p class="subtitle">Traccia i tuoi investimenti e rendimenti</p></div></div>
-    <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)" id="invKpi"></div>
-    <div id="invList"></div>
-    <div class="card form-card mt-10">
-      <div class="card-header"><span class="card-title">Nuovo investimento</span></div>
-      <div class="form-grid"><div class="form-group"><label>Nome</label><input type="text" class="form-input" id="invName" placeholder="Es. ETF World, BTP, Crypto..."></div><div class="form-group"><label>Piattaforma</label><input type="text" class="form-input" id="invPlatform" placeholder="Es. Fineco, Degiro, Satispay..."></div></div>
-      <div class="form-grid"><div class="form-group"><label>Capitale investito (€)</label><input type="number" class="form-input" id="invAmount" placeholder="0.00" min="0" step="0.01"></div><div class="form-group"><label>Valore attuale (€)</label><input type="number" class="form-input" id="invCurrent" placeholder="0.00" min="0" step="0.01"></div></div>
-      <div class="form-group mb-14"><label>Tipo</label><select class="form-input" id="invType" style="max-width:220px"><option value="etf">ETF / Fondi</option><option value="azioni">Azioni</option><option value="crypto">Crypto</option><option value="obbligazioni">Obbligazioni / BTP</option><option value="conto">Conto deposito</option><option value="altro">Altro</option></select></div>
-      <div class="btn-row"><button class="btn primary" onclick="addInv()">+Aggiungi investimento</button></div>
-    </div>
-  </div>
-  <!-- RISPARMIO -->
-  <div id="risparmio" class="section">
-    <div class="page-header"><div><h2>Risparmio casa</h2><p class="subtitle">Traccia il tuo obiettivo</p></div></div>
-    <div class="card" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:14px"><div><div style="font-size:12px;color:var(--text-sec);font-weight:600">💰 Saldo attuale sul conto</div><div style="font-size:24px;font-weight:700;color:var(--green);margin-top:4px" id="saldoDisplay"></div></div><div class="edit-row" style="margin:0"><input type="number" class="form-input" id="saldoInput" min="0" step="0.01" style="max-width:150px"><button class="btn sm primary" onclick="saveSaldo()">Aggiorna</button></div></div>
-    <div id="risparmioProgress"></div>
-    <div class="grid-2">
-      <div class="card"><div class="card-header"><span class="card-title">Andamento risparmio</span></div><div class="chart-wrap-sm"><canvas id="risparmioChart"></canvas></div></div>
-      <div class="card"><div class="card-header"><span class="card-title">Storico mensile</span></div><div id="risparmioList"></div></div>
-    </div>
-  </div>
 </main>
 <div id="toast"></div>
 <script>
@@ -341,11 +301,22 @@ function renderPanoramica(){
   if(gOb>0){const gp=targetFine>0?Math.min(100,Math.max(0,Math.round(stimato/targetFine*100))):0;
     document.getElementById('panGoal').innerHTML=`<div class="goal-banner"><div class="goal-main"><div class="goal-label">🎯 Obiettivo fine mese</div><div class="goal-target">${fmt(d.risparmio)} inizio + ${fmt(gOb)} risparmio</div><div class="goal-value" style="color:var(--blue)">${fmt(targetFine)}</div></div><div class="goal-vs"><div class="goal-box"><div class="goal-box-label">Stimata attuale</div><div class="goal-box-val" style="color:${stimato>=targetFine?'var(--green)':'var(--red)'}">${fmt(stimato)}</div></div><div class="goal-box"><div class="goal-box-label">${gdiff>=0?'Sopra':'Sotto'} obiettivo</div><div class="goal-box-val" style="color:${gdiff>=0?'var(--green)':'var(--red)'}">${gdiff>=0?'+':''}${fmt(gdiff)}</div></div></div><div class="goal-bar-wrap"><div class="goal-bar-fill" style="width:${gp}%;background:${stimato>=targetFine?'var(--green)':'var(--red)'}"></div></div></div>`}else{document.getElementById('panGoal').innerHTML=''}
   document.getElementById('kpiRow').innerHTML=`
-    <div class="kpi-card"><div class="icon-wrap green">💵</div><div class="kpi-label">Entrate</div><div class="kpi-value" style="color:var(--green)">${fmt(ent)}</div>${pctE}</div>
-    <div class="kpi-card"><div class="icon-wrap red">🛒</div><div class="kpi-label">Spese totali</div><div class="kpi-value" style="color:var(--red)">${fmt(tot)}</div>${pctS}</div>
-    <div class="kpi-card"><div class="icon-wrap blue">💰</div><div class="kpi-label">Inizio mese</div><div class="kpi-value">${fmt(d.risparmio)}</div></div>
-    <div class="kpi-card"><div class="icon-wrap amber">🎯</div><div class="kpi-label">Fine mese stimata</div><div class="kpi-value" style="color:${stimato>=0?'var(--green)':'var(--red)'}">${fmt(stimato)}</div></div>`;
-  const cm={};d.fisse.forEach(x=>{const c=getCat(x.n);cm[c]=(cm[c]||0)+(x.v||0)});if(e>0)cm['Spese extra']=(cm['Spese extra']||0)+e;
+    <div class="kpi-card"><div class="icon-wrap blue">🐷</div><div class="kpi-label">Inizio mese</div><div class="kpi-value">${fmt(d.risparmio)}</div><div class="edit-row"><input type="number" class="form-input" id="editRispPan" value="${d.risparmio}" min="0" step="0.01"><button class="btn sm" onclick="saveRispPan('${m}')">Salva</button></div></div>
+    <div class="kpi-card"><div class="icon-wrap green">💵</div><div class="kpi-label">Totale entrate</div><div class="kpi-value" style="color:var(--green)">${fmt(ent)}</div>${pctE}</div>
+    <div class="kpi-card"><div class="icon-wrap red">🛒</div><div class="kpi-label">Totale uscite</div><div class="kpi-value" style="color:var(--red)">${fmt(tot)}</div>${pctS}</div>
+    <div class="kpi-card"><div class="icon-wrap amber">📊</div><div class="kpi-label">Fine mese stimata</div><div class="kpi-value" style="color:${stimato>=0?'var(--green)':'var(--red)'}">${fmt(stimato)}</div></div>
+    <div class="kpi-card"><div class="icon-wrap purple">🎯</div><div class="kpi-label">Obiettivo risparmio</div><div class="kpi-value" style="color:var(--blue)">${gOb>0?fmt(targetFine):'-'}</div>${gOb>0?`<div style="font-size:11px;color:var(--text-muted);margin-top:4px">+${fmt(gOb)} da risparmiare</div>`:''}</div>`;
+  // Pie chart: group by custom categories
+  const cm={};
+  const fTotal=tF(d);
+  if(fTotal>0)cm['Spese fisse']=fTotal;
+  d.extra.forEach(x=>{
+    const ln=x.n.toLowerCase();
+    if(ln.startsWith('uscita'))cm['Uscite']=(cm['Uscite']||0)+(x.v||0);
+    else if(ln.startsWith('spesa'))cm['Spese']=(cm['Spese']||0)+(x.v||0);
+    else if(ln.startsWith('compro online'))cm['Compro online']=(cm['Compro online']||0)+(x.v||0);
+    else cm['Altro']=(cm['Altro']||0)+(x.v||0);
+  });
   const keys=Object.keys(cm).filter(k=>cm[k]>0),vals=keys.map(k=>Math.round(cm[k]));
   if(CHS.pie)CHS.pie.destroy();CHS.pie=new Chart(document.getElementById('pieChart'),{type:'doughnut',data:{labels:keys,datasets:[{data:vals,backgroundColor:PIE_C.slice(0,keys.length),borderWidth:3,borderColor:'transparent',hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.label}: ${fmt(c.raw)}`}}}}});
   const tp=vals.reduce((a,b)=>a+b,0);document.getElementById('pieLegend').innerHTML=keys.map((k,i)=>`<span class="legend-item"><span class="legend-sq" style="background:${PIE_C[i]}"></span>${k} ${tp?Math.round(vals[i]/tp*100):0}%</span>`).join('');
@@ -367,12 +338,8 @@ function renderMese(){
   if(gOb>0){const gp=targetFine>0?Math.min(100,Math.max(0,Math.round(stimato/targetFine*100))):0;
     document.getElementById('meseGoal').innerHTML=`<div class="goal-banner"><div class="goal-main"><div class="goal-label">🎯 Obiettivo fine mese</div><div class="goal-target">${fmt(d.risparmio)} inizio + ${fmt(gOb)} risparmio</div><div class="goal-value" style="color:var(--blue)">${fmt(targetFine)}</div></div><div class="goal-vs"><div class="goal-box"><div class="goal-box-label">Stimata attuale</div><div class="goal-box-val" style="color:${stimato>=targetFine?'var(--green)':'var(--red)'}">${fmt(stimato)}</div></div><div class="goal-box"><div class="goal-box-label">${gdiff>=0?'Sopra':'Sotto'} obiettivo</div><div class="goal-box-val" style="color:${gdiff>=0?'var(--green)':'var(--red)'}">${gdiff>=0?'+':''}${fmt(gdiff)}</div></div></div><div class="goal-bar-wrap"><div class="goal-bar-fill" style="width:${gp}%;background:${stimato>=targetFine?'var(--green)':'var(--red)'}"></div></div></div>`}else{document.getElementById('meseGoal').innerHTML=''}
 
-  // KPI row
-  document.getElementById('meseKpi').innerHTML=`<div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px">
-    <div class="kpi-card"><div class="icon-wrap blue">🐷</div><div class="kpi-label">Inizio mese</div><div class="kpi-value">${fmt(d.risparmio)}</div><div class="edit-row"><input type="number" class="form-input" id="editRisp" value="${d.risparmio}" min="0" step="0.01"><button class="btn sm" onclick="saveRisp('${m}')">Salva</button></div></div>
-    <div class="kpi-card"><div class="icon-wrap ${net>=0?'green':'red'}">📊</div><div class="kpi-label">Bilancio del mese</div><div class="kpi-value" style="color:${net>=0?'var(--green)':'var(--red)'}">${fmt(net)}</div></div>
-    <div class="kpi-card"><div class="icon-wrap amber">🎯</div><div class="kpi-label">Fine mese stimata</div><div class="kpi-value" style="color:${stimato>=0?'var(--green)':'var(--red)'}">${fmt(stimato)}</div></div>
-  </div>`;
+  // KPI row removed — data shown in panoramica
+  document.getElementById('meseKpi').innerHTML='';
 
   // Entrate as list
   let hE=`<div class="card"><div class="expense-group"><div class="expense-group-header"><span class="expense-group-title">💵 Entrate</span><span class="expense-group-total" style="color:var(--green)">${fmt(ent)}</span></div>`;
@@ -421,6 +388,7 @@ function renderFG(mese,title,icon,items,total,d){
 function toggleCk(m,i){S.dati[m].fisse[i].ck=!S.dati[m].fisse[i].ck;save();renderMese()}
 function del(m,t,i){if(t==='f')S.dati[m].fisse.splice(i,1);else S.dati[m].extra.splice(i,1);save();renderMese();toast('Eliminata')}
 function saveRisp(m){const v=parseFloat(document.getElementById('editRisp').value);if(!isNaN(v)){S.dati[m].risparmio=v;save();renderMese();toast('Aggiornato')}}
+function saveRispPan(m){const v=parseFloat(document.getElementById('editRispPan').value);if(!isNaN(v)){S.dati[m].risparmio=v;save();renderPanoramica();toast('Inizio mese aggiornato')}}
 function addIncome(m){const desc=document.getElementById('addIncDesc').value.trim()||'Entrata',amt=parseFloat(document.getElementById('addIncAmt').value);if(!amt||amt<=0){toast('Inserisci un importo');return}if(!S.dati[m].entrateList)S.dati[m].entrateList=[];S.dati[m].entrateList.push({n:desc,v:amt});S.dati[m].entrate=tEntr(S.dati[m]);save();document.getElementById('addIncDesc').value='';document.getElementById('addIncAmt').value='';renderMese();toast(`+ ${fmtD(amt)} entrata`)}
 function delIncome(m,i){S.dati[m].entrateList.splice(i,1);S.dati[m].entrate=tEntr(S.dati[m]);save();renderMese();toast('Entrata eliminata')}
 function editIncome(m,i){const x=S.dati[m].entrateList[i];const row=document.getElementById('inr_'+i);if(!row)return;row.innerHTML=`<div class="inline-edit" style="width:100%"><input type="text" class="form-input" value="${x.n}" id="eiN${i}" style="flex:1"><input type="number" class="form-input" value="${x.v}" id="eiV${i}" step="0.01" style="max-width:90px"><button class="btn sm primary" onclick="saveEditI('${m}',${i})">✓</button><button class="btn sm" onclick="renderMese()">✕</button></div>`}
