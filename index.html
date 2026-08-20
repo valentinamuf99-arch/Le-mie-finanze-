@@ -313,7 +313,7 @@ function renderPanoramica(){
   d.extra.forEach(x=>{
     const ln=x.n.toLowerCase();
     if(ln.startsWith('uscita'))cm['Uscite']=(cm['Uscite']||0)+(x.v||0);
-    else if(ln.startsWith('spesa'))cm['Spese']=(cm['Spese']||0)+(x.v||0);
+    else if(ln.startsWith('spesa'))cm['Spese alimentari']=(cm['Spese alimentari']||0)+(x.v||0);
     else if(ln.startsWith('compro online'))cm['Compro online']=(cm['Compro online']||0)+(x.v||0);
     else if(ln.startsWith('extra'))cm['Extra']=(cm['Extra']||0)+(x.v||0);
     else cm['Altro']=(cm['Altro']||0)+(x.v||0);
