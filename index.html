@@ -316,6 +316,7 @@ function renderPanoramica(){
     else if(ln.startsWith('spesa'))cm['Spese alimentari']=(cm['Spese alimentari']||0)+(x.v||0);
     else if(ln.startsWith('compro online'))cm['Compro online']=(cm['Compro online']||0)+(x.v||0);
     else if(ln.startsWith('extra'))cm['Extra']=(cm['Extra']||0)+(x.v||0);
+    else if(ln.startsWith('salute'))cm['Salute']=(cm['Salute']||0)+(x.v||0);
     else cm['Altro']=(cm['Altro']||0)+(x.v||0);
   });
   const keys=Object.keys(cm).filter(k=>cm[k]>0),vals=keys.map(k=>Math.round(cm[k]));
