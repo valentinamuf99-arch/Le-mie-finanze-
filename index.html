@@ -14,6 +14,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <style>
 :root{--navy:#0f172a;--navy-light:#1e293b;--navy-lighter:#334155;--blue:#3b82f6;--blue-soft:#60a5fa;--blue-bg:#eff6ff;--blue-bg2:#dbeafe;--green:#10b981;--green-bg:#ecfdf5;--green-dark:#059669;--red:#ef4444;--red-bg:#fef2f2;--red-dark:#dc2626;--amber:#f59e0b;--amber-bg:#fffbeb;--purple:#8b5cf6;--purple-bg:#f5f3ff;--bg:#f1f5f9;--surface:#ffffff;--surface2:#f8fafc;--border:#e2e8f0;--border-strong:#cbd5e1;--text:#0f172a;--text-sec:#64748b;--text-muted:#94a3b8;--sidebar-w:240px;--radius:12px;--radius-sm:8px}
 @media(prefers-color-scheme:dark){:root{--blue-bg:#172554;--blue-bg2:#1e3a5f;--green-bg:#052e16;--red-bg:#350a0a;--amber-bg:#422006;--purple-bg:#1e1547;--bg:#0f172a;--surface:#1e293b;--surface2:#1a2536;--border:#334155;--border-strong:#475569;--text:#f1f5f9;--text-sec:#94a3b8;--text-muted:#64748b}}
@@ -148,6 +151,11 @@ body{font-family:'Inter',-apple-system,system-ui,sans-serif;background:var(--bg)
 .ob-mese-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .ob-mese-bar{height:6px;background:var(--surface2);border-radius:3px;flex:1;min-width:100px;overflow:hidden}
 .ob-mese-fill{height:100%;border-radius:3px;transition:width .4s}
+.sync-status{font-size:10px;color:var(--text-muted);margin-top:4px;display:flex;align-items:center;gap:4px}
+.sync-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.sync-dot.online{background:var(--green)}.sync-dot.offline{background:var(--text-muted)}
+.login-btn{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;color:#94a3b8;transition:all .15s;border:none;background:none;width:100%;text-align:left;font-family:inherit;margin-top:4px}
+.login-btn:hover{background:rgba(255,255,255,.06);color:#e2e8f0}
 
 </style>
 </head>
@@ -161,7 +169,11 @@ body{font-family:'Inter',-apple-system,system-ui,sans-serif;background:var(--bg)
     <button class="nav-item" onclick="go('dettaglio',this)"><span style="width:22px;text-align:center;flex-shrink:0">📋</span> Dettaglio mese</button>
     <button class="nav-item" onclick="go('aggiungi',this)"><span style="width:22px;text-align:center;flex-shrink:0">➕</span> Nuovo mese</button>
   </div>
-  <div class="sidebar-footer"><div class="user-card"><div class="avatar">EU</div><div class="user-info"><div class="name">Eugenia</div><div class="role">Dati salvati localmente</div></div></div></div>
+  <div class="sidebar-footer">
+    <div id="userCard" class="user-card"><div class="avatar">?</div><div class="user-info"><div class="name">Non connesso</div><div class="role">Dati solo locali</div></div></div>
+    <button class="login-btn" id="loginBtn" onclick="handleAuth()">🔑 Accedi con Google</button>
+    <div class="sync-status" id="syncStatus"><span class="sync-dot offline"></span>Offline</div>
+  </div>
 </aside>
 <main class="main">
   <!-- PANORAMICA -->
@@ -200,6 +212,87 @@ body{font-family:'Inter',-apple-system,system-ui,sans-serif;background:var(--bg)
 </main>
 <div id="toast"></div>
 <script>
+/* ═══ FIREBASE ═══ */
+firebase.initializeApp({
+  apiKey:"AIzaSyBPDmfVBiQwIRpyoYH6FBON2sFrEUuc3O0",
+  authDomain:"le-mie-finanze-d67c2.firebaseapp.com",
+  projectId:"le-mie-finanze-d67c2",
+  storageBucket:"le-mie-finanze-d67c2.firebasestorage.app",
+  messagingSenderId:"1077259611651",
+  appId:"1:1077259611651:web:945c0e724a9020de7f2836"
+});
+const auth=firebase.auth();
+const db=firebase.firestore();
+let currentUser=null;
+
+function updateUserUI(user){
+  const card=document.getElementById('userCard');
+  const btn=document.getElementById('loginBtn');
+  const sync=document.getElementById('syncStatus');
+  if(user){
+    currentUser=user;
+    const initials=user.displayName?user.displayName.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2):'U';
+    card.innerHTML=`<div class="avatar">${initials}</div><div class="user-info"><div class="name">${user.displayName||'Utente'}</div><div class="role">${user.email||''}</div></div>`;
+    btn.textContent='🚪 Esci';
+    btn.onclick=handleAuth;
+    sync.innerHTML='<span class="sync-dot online"></span>Sincronizzato';
+  } else {
+    currentUser=null;
+    card.innerHTML='<div class="avatar">?</div><div class="user-info"><div class="name">Non connesso</div><div class="role">Dati solo locali</div></div>';
+    btn.textContent='🔑 Accedi con Google';
+    btn.onclick=handleAuth;
+    sync.innerHTML='<span class="sync-dot offline"></span>Solo locale';
+  }
+}
+
+async function handleAuth(){
+  if(currentUser){
+    await auth.signOut();
+    updateUserUI(null);
+    toast('Disconnesso');
+  } else {
+    try{
+      const provider=new firebase.auth.GoogleAuthProvider();
+      const result=await auth.signInWithPopup(provider);
+      updateUserUI(result.user);
+      await loadFromCloud();
+      toast('Connesso! Dati sincronizzati');
+    }catch(e){
+      if(e.code!=='auth/popup-closed-by-user')toast('Errore login: '+e.message);
+    }
+  }
+}
+
+async function saveToCloud(){
+  if(!currentUser)return;
+  try{
+    await db.collection('users').doc(currentUser.uid).set({data:JSON.stringify(S),updated:firebase.firestore.FieldValue.serverTimestamp()});
+  }catch(e){console.error('Sync error:',e)}
+}
+
+async function loadFromCloud(){
+  if(!currentUser)return;
+  try{
+    const doc=await db.collection('users').doc(currentUser.uid).get();
+    if(doc.exists){
+      const cloud=JSON.parse(doc.data().data);
+      S=cloud;
+      save();
+      fillSelects();renderPanoramica();
+      toast('Dati caricati dal cloud');
+    } else {
+      await saveToCloud();
+      toast('Dati locali caricati sul cloud');
+    }
+  }catch(e){console.error('Load error:',e)}
+}
+
+// Listen for auth state on page load
+auth.onAuthStateChanged(user=>{
+  updateUserUI(user);
+  if(user)loadFromCloud();
+});
+
 /* ═══ ICON MAP ═══ */
 const EMOJI={
   'palestra':'🏋️','allenamento':'💪','telefono':'📱','apple':'🍎','iliad':'📞',
@@ -268,7 +361,7 @@ function load(){try{const r=localStorage.getItem('finanze_v7');if(r){const d=JSO
   for(const m of base.mesi){const dd=base.dati[m];if(dd&&!dd.entrateList){dd.entrateList=[{n:'Stipendio',v:dd.entrate||0}]}}
   return base;
 }
-function save(){try{localStorage.setItem('finanze_v7',JSON.stringify(S))}catch(e){}}
+function save(){try{localStorage.setItem('finanze_v7',JSON.stringify(S))}catch(e){}saveToCloud()}
 let S=load();let CHS={};
 
 const fmt=n=>new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(n||0);
