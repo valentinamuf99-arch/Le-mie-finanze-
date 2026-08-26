@@ -19,7 +19,19 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <style>
 :root{--navy:#1a1f36;--navy-light:#252b48;--navy-lighter:#363d5e;--blue:#4A6CF7;--blue-soft:#6B8AFF;--blue-bg:#EEF2FF;--blue-bg2:#DCE3FF;--green:#34D399;--green-bg:#ECFDF5;--green-dark:#059669;--red:#F87171;--red-bg:#FEF2F2;--red-dark:#DC2626;--amber:#FBBF24;--amber-bg:#FFFBEB;--purple:#7C5CFC;--purple-bg:#F0EDFF;--bg:#F5F7FA;--surface:#ffffff;--surface2:#F9FAFB;--border:#E5E7EB;--border-strong:#D1D5DB;--text:#1a1f36;--text-sec:#6B7280;--text-muted:#9CA3AF;--sidebar-w:240px;--radius:14px;--radius-sm:10px}
-@media(prefers-color-scheme:dark){:root{--blue-bg:#1e2547;--blue-bg2:#252d54;--green-bg:#052e16;--red-bg:#350a0a;--amber-bg:#422006;--purple-bg:#1e1547;--bg:#0f1221;--surface:#1a1f36;--surface2:#1e2440;--border:#2d3555;--border-strong:#3d4568;--text:#F1F5F9;--text-sec:#9CA3AF;--text-muted:#6B7280}}
+html.dark{--navy:#0f1221;--navy-light:#1a1f36;--navy-lighter:#252b48;--blue-bg:#1e2547;--blue-bg2:#252d54;--green-bg:#052e16;--red-bg:#350a0a;--amber-bg:#422006;--purple-bg:#1e1547;--bg:#0f1221;--surface:#1a1f36;--surface2:#1e2440;--border:#2d3555;--border-strong:#3d4568;--text:#F1F5F9;--text-sec:#9CA3AF;--text-muted:#6B7280}
+html.dark .sidebar{background:#1a1f36;border-right-color:#2d3555}
+html.dark .sidebar .nav-item{color:#9CA3AF}html.dark .sidebar .nav-item:hover{background:rgba(255,255,255,.06);color:#e2e8f0}
+html.dark .sidebar-brand h1{color:#f1f5f9}
+html.dark .sidebar-footer .user-card{background:rgba(255,255,255,.05)}
+html.dark .user-info .name{color:#e2e8f0}
+html.dark .login-btn{color:#9CA3AF}html.dark .login-btn:hover{background:rgba(255,255,255,.06);color:#e2e8f0}
+html.dark .mobile-header{background:#1a1f36;border-bottom-color:#2d3555}
+html.dark .mobile-header h1{color:#f1f5f9}
+html.dark .hamburger{color:#9CA3AF}
+.theme-toggle{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text-sec);transition:all .15s;border:none;background:none;width:100%;text-align:left;font-family:inherit}
+.theme-toggle:hover{background:var(--surface2);color:var(--text)}
+html.dark .theme-toggle{color:#9CA3AF}html.dark .theme-toggle:hover{background:rgba(255,255,255,.06);color:#e2e8f0}
 *{box-sizing:border-box;margin:0;padding:0}html{height:100%}
 body{font-family:'Inter',-apple-system,system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100%;font-size:14px;line-height:1.5;display:flex}
 .sidebar{width:var(--sidebar-w);background:#ffffff;color:#6B7280;display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:50;transition:transform .25s;overflow-y:auto;border-right:1px solid var(--border)}
@@ -169,6 +181,9 @@ body{font-family:'Inter',-apple-system,system-ui,sans-serif;background:var(--bg)
     <button class="nav-item" onclick="go('dettaglio',this)"><span style="width:22px;text-align:center;flex-shrink:0">📋</span> Dettaglio mese</button>
     <button class="nav-item" onclick="go('aggiungi',this)"><span style="width:22px;text-align:center;flex-shrink:0">➕</span> Nuovo mese</button>
   </div>
+  <div class="sidebar-section" style="margin-top:auto;padding-bottom:0">
+    <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()">🌙 Tema scuro</button>
+  </div>
   <div class="sidebar-footer">
     <div id="userCard" class="user-card"><div class="avatar">?</div><div class="user-info"><div class="name">Non connesso</div><div class="role">Dati solo locali</div></div></div>
     <button class="login-btn" id="loginBtn" onclick="handleAuth()">🔑 Accedi con Google</button>
@@ -212,6 +227,18 @@ body{font-family:'Inter',-apple-system,system-ui,sans-serif;background:var(--bg)
 </main>
 <div id="toast"></div>
 <script>
+/* ═══ THEME ═══ */
+function getThemePref(){const saved=localStorage.getItem('finanze_theme');if(saved)return saved;return window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'}
+function applyTheme(theme){
+  document.documentElement.classList.toggle('dark',theme==='dark');
+  const btn=document.getElementById('themeBtn');
+  if(btn)btn.textContent=theme==='dark'?'☀️ Tema chiaro':'🌙 Tema scuro';
+  const meta=document.querySelector('meta[name="theme-color"]');
+  if(meta)meta.content=theme==='dark'?'#1a1f36':'#F5F7FA';
+}
+function toggleTheme(){const current=document.documentElement.classList.contains('dark')?'light':'dark';localStorage.setItem('finanze_theme',current);applyTheme(current)}
+applyTheme(getThemePref());
+
 /* ═══ FIREBASE ═══ */
 firebase.initializeApp({
   apiKey:"AIzaSyBPDmfVBiQwIRpyoYH6FBON2sFrEUuc3O0",
