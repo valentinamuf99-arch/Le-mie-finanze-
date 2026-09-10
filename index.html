@@ -201,6 +201,7 @@ body{font-family:'Inter',-apple-system,system-ui,sans-serif;background:var(--bg)
     <div class="page-header"><div><h2>Panoramica</h2><p class="subtitle" id="dateLabel"></p></div><div class="header-actions"><select class="month-select" id="selMese" onchange="renderPanoramica()"></select></div></div>
     <div id="panGoal"></div>
     <div class="kpi-grid" id="kpiRow"></div>
+    <div class="grid-2 mb-20" id="panSummary"></div>
     <div class="charts-grid">
       <div class="card" style="margin:0"><div class="card-header"><span class="card-title">Distribuzione spese</span></div><div class="chart-wrap"><canvas id="pieChart"></canvas></div><div class="legend" id="pieLegend"></div></div>
       <div class="card" style="margin:0"><div class="card-header"><span class="card-title">Entrate vs uscite</span></div><div class="chart-wrap"><canvas id="barChart"></canvas></div><div class="legend"><span class="legend-item"><span class="legend-sq" style="background:#34D399"></span>Entrate</span><span class="legend-item"><span class="legend-sq" style="background:#F87171"></span>Spese</span></div></div>
@@ -431,6 +432,30 @@ function renderPanoramica(){
     <div class="kpi-card"><div class="icon-wrap red">🛒</div><div class="kpi-label">Totale uscite</div><div class="kpi-value" style="color:var(--red)">${fmt(tot)}</div>${pctS}</div>
     <div class="kpi-card"><div class="icon-wrap amber">📊</div><div class="kpi-label">Fine mese stimata</div><div class="kpi-value" style="color:${stimato>=0?'var(--green)':'var(--red)'}">${fmt(stimato)}</div></div>
     <div class="kpi-card"><div class="icon-wrap purple">🎯</div><div class="kpi-label">Obiettivo risparmio</div><div class="kpi-value" style="color:var(--blue)">${gOb>0?fmt(targetFine):'-'}</div>${gOb>0?`<div style="font-size:11px;color:var(--text-muted);margin-top:4px">+${fmt(gOb)} da risparmiare</div>`:''}</div>`;
+
+  // Summary cards: risparmio totale + spese non necessarie
+  const risparmioMese=net; // entrate - spese = quanto stai risparmiando
+  let speseNonNecessarie=0;
+  d.extra.forEach(x=>{
+    const ln=x.n.toLowerCase();
+    if(!ln.startsWith('spesa')&&!ln.startsWith('salute')){speseNonNecessarie+=(x.v||0)}
+  });
+  document.getElementById('panSummary').innerHTML=`
+    <div class="card" style="margin:0;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <div style="flex:1;min-width:160px">
+        <div style="font-size:12px;color:var(--text-sec);font-weight:600">💰 Risparmio di questo mese</div>
+        <div style="font-size:28px;font-weight:700;margin-top:6px;color:${risparmioMese>=0?'var(--green)':'var(--red)'}">${fmt(risparmioMese)}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:4px">Obiettivo: ${fmt(gOb)} ${risparmioMese>=gOb?'<span style="color:var(--green)">✅ raggiunto</span>':'<span style="color:var(--red)">ancora '+ fmt(gOb-risparmioMese)+' da risparmiare</span>'}</div>
+      </div>
+    </div>
+    <div class="card" style="margin:0;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <div style="flex:1;min-width:160px">
+        <div style="font-size:12px;color:var(--text-sec);font-weight:600">🛍️ Spese non necessarie</div>
+        <div style="font-size:28px;font-weight:700;margin-top:6px;color:var(--red)">${fmt(speseNonNecessarie)}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:4px">Uscite, Extra, Compro online, Altro</div>
+      </div>
+    </div>`;
+
   // Pie chart: group by custom categories
   const cm={};
   const fTotal=tF(d);
