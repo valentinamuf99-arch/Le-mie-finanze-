@@ -332,6 +332,7 @@ function updateUserUI(user){
   }
 }
 
+const isMobile=/iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 async function handleAuth(){
   if(currentUser){
     await auth.signOut();
@@ -340,12 +341,16 @@ async function handleAuth(){
   } else {
     try{
       const provider=new firebase.auth.GoogleAuthProvider();
-      const result=await auth.signInWithPopup(provider);
-      updateUserUI(result.user);
-      await loadFromCloud();
-      toast('Connesso! Dati sincronizzati');
+      if(isMobile){
+        await auth.signInWithRedirect(provider);
+      } else {
+        const result=await auth.signInWithPopup(provider);
+        updateUserUI(result.user);
+        await loadFromCloud();
+        toast('Connesso! Dati sincronizzati');
+      }
     }catch(e){
-      if(e.code!=='auth/popup-closed-by-user')toast('Errore login: '+e.message);
+      if(e.code!=='auth/popup-closed-by-user')toast('Errore: '+e.message);
     }
   }
 }
@@ -354,7 +359,7 @@ async function saveToCloud(){
   if(!currentUser)return;
   try{
     await db.collection('users').doc(currentUser.uid).set({data:JSON.stringify(S),updated:firebase.firestore.FieldValue.serverTimestamp()});
-  }catch(e){console.error('Sync error:',e)}
+  }catch(e){toast('Errore sync: '+e.message);console.error('Sync error:',e)}
 }
 
 async function loadFromCloud(){
@@ -364,15 +369,23 @@ async function loadFromCloud(){
     if(doc.exists){
       const cloud=JSON.parse(doc.data().data);
       S=cloud;
-      save();
-      fillSelects();renderPanoramica();
-      toast('Dati caricati dal cloud');
+      try{localStorage.setItem('finanze_v7',JSON.stringify(S))}catch(e){}
+      fillSelects();renderPanoramica();renderMiniCal();
+      toast('Dati caricati dal cloud ☁️');
     } else {
       await saveToCloud();
-      toast('Dati locali caricati sul cloud');
+      toast('Dati locali caricati sul cloud ☁️');
     }
-  }catch(e){console.error('Load error:',e)}
+  }catch(e){toast('Errore caricamento: '+e.message);console.error('Load error:',e)}
 }
+
+// Handle redirect result (mobile login)
+auth.getRedirectResult().then(result=>{
+  if(result&&result.user){
+    updateUserUI(result.user);
+    loadFromCloud();
+  }
+}).catch(e=>{if(e.code!=='auth/popup-closed-by-user')toast('Errore redirect: '+e.message)});
 
 // Listen for auth state on page load
 auth.onAuthStateChanged(user=>{
