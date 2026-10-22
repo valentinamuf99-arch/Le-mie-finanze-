@@ -211,6 +211,7 @@ html.dark .fab-option{background:#1e2440;border-color:#2d3555;color:#f1f5f9}
     <button class="nav-item" onclick="go('aggiungi',this)"><span>➕</span> Nuovo mese</button>
   </div>
   <div class="sidebar-section" style="margin-top:4px">
+    <button class="nav-item" onclick="go('pianificazione',this)"><span>🧭</span> Pianificazione</button>
     <button class="nav-item" onclick="go('impostazioni',this)"><span>⚙️</span> Impostazioni</button>
   </div>
   <div id="miniCal" style="padding:10px 14px;margin-top:auto"></div>
@@ -250,6 +251,113 @@ html.dark .fab-option{background:#1e2440;border-color:#2d3555;color:#f1f5f9}
     </div>
   </div>
   <!-- DEBITI -->
+
+  <!-- PIANIFICAZIONE -->
+  <div id="pianificazione" class="section">
+    <div class="page-header"><div><h2>Pianificazione finanziaria</h2><p class="subtitle">Pianifica il tuo futuro economico</p></div></div>
+
+    <!-- Situazione attuale -->
+    <div class="card">
+      <div class="card-header"><span class="card-title">💰 Situazione attuale</span></div>
+      <div class="form-grid">
+        <div class="form-group"><label>Guadagno mensile netto (€)</label><input type="number" class="form-input" id="pGuadagno" min="0" step="0.01" onchange="savePian()"></div>
+        <div class="form-group"><label>Spese mensili medie (€)</label><input type="number" class="form-input" id="pSpeseMedie" min="0" step="0.01" onchange="savePian()"></div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group"><label>Risparmio mensile medio (€)</label><input type="number" class="form-input" id="pRisparmioMedio" min="0" step="0.01" onchange="savePian()"></div>
+        <div class="form-group"><label>Percentuale risparmio</label><div id="pPercRisparmio" style="font-size:20px;font-weight:700;color:var(--green);padding:9px 0">-</div></div>
+      </div>
+    </div>
+
+    <!-- Debiti -->
+    <div class="card">
+      <div class="card-header"><span class="card-title">🔴 Debiti</span></div>
+      <div id="pDebtList"></div>
+      <div class="quick-add" style="margin-top:10px">
+        <select class="form-input" id="pDebtTipo" style="max-width:140px">
+          <option value="Prestito personale">Prestito personale</option>
+          <option value="Finanziamento auto">Finanziamento auto</option>
+          <option value="Mutuo">Mutuo</option>
+          <option value="Carta di credito">Carta di credito</option>
+          <option value="Debito con familiari">Debito con familiari</option>
+          <option value="Altro">Altro</option>
+        </select>
+        <input type="text" class="form-input" id="pDebtDesc" placeholder="Descrizione">
+        <input type="number" class="form-input amt-input" id="pDebtAmt" placeholder="€" min="0" step="0.01">
+        <input type="number" class="form-input" id="pDebtRata" placeholder="Rata €/mese" min="0" step="0.01" style="max-width:110px">
+        <button class="btn sm primary" onclick="addPianDebt()">+</button>
+      </div>
+    </div>
+
+    <!-- Fondo di emergenza -->
+    <div class="card">
+      <div class="card-header"><span class="card-title">🛡️ Fondo di emergenza</span></div>
+      <div class="form-grid">
+        <div class="form-group"><label>Mesi di copertura desiderati</label>
+          <select class="form-input" id="pFondoMesi" onchange="savePian()">
+            <option value="3">3 mesi (minimo consigliato)</option>
+            <option value="4">4 mesi</option>
+            <option value="5">5 mesi</option>
+            <option value="6" selected>6 mesi (consigliato)</option>
+            <option value="9">9 mesi</option>
+            <option value="12">12 mesi</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Obiettivo fondo (€)</label><div id="pFondoObiettivo" style="font-size:20px;font-weight:700;color:var(--blue);padding:9px 0">-</div></div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group"><label>Già accantonato (€)</label><input type="number" class="form-input" id="pFondoAttuale" min="0" step="0.01" onchange="savePian()"></div>
+        <div class="form-group"><label>Dove tenerlo</label>
+          <select class="form-input" id="pFondoDove" onchange="savePian()">
+            <option value="Conto deposito svincolabile">Conto deposito svincolabile ✅</option>
+            <option value="Conto corrente">Conto corrente</option>
+            <option value="Conto deposito vincolato">Conto deposito vincolato</option>
+            <option value="Altro">Altro</option>
+          </select>
+        </div>
+      </div>
+      <div id="pFondoProgress" style="margin-top:12px"></div>
+      <div style="margin-top:12px;padding:12px;background:var(--blue-bg);border-radius:var(--radius-sm);font-size:12px;color:var(--text-sec)">
+        💡 <b>Consiglio:</b> il fondo di emergenza va tenuto in un conto deposito svincolabile — è facilmente accessibile in caso di bisogno e nel frattempo genera interessi.
+      </div>
+    </div>
+
+    <!-- Obiettivi finanziari -->
+    <div class="card">
+      <div class="card-header"><span class="card-title">🎯 Obiettivi finanziari</span></div>
+      <div id="pGoalList"></div>
+      <div style="margin-top:12px;padding:14px;background:var(--surface2);border-radius:var(--radius-sm)">
+        <div style="font-size:13px;font-weight:600;margin-bottom:10px">Nuovo obiettivo</div>
+        <div class="form-grid">
+          <div class="form-group"><label>Nome obiettivo</label><input type="text" class="form-input" id="pGoalName" placeholder="Es. Pensione serena, Casa, Viaggio..."></div>
+          <div class="form-group"><label>Importo target (€)</label><input type="number" class="form-input" id="pGoalTarget" placeholder="0" min="0" step="100"></div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group"><label>Già accumulato (€)</label><input type="number" class="form-input" id="pGoalSaved" placeholder="0" min="0" step="0.01"></div>
+          <div class="form-group"><label>Orizzonte temporale</label>
+            <select class="form-input" id="pGoalHorizon">
+              <option value="1-2 anni">1-2 anni (breve)</option>
+              <option value="3-5 anni">3-5 anni (medio)</option>
+              <option value="5-10 anni">5-10 anni (lungo)</option>
+              <option value="10-20 anni">10-20 anni (molto lungo)</option>
+              <option value="20+ anni">20+ anni (pensione)</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:10px"><label>Priorità</label>
+          <select class="form-input" id="pGoalPriority" style="max-width:180px">
+            <option value="🔴 Alta">🔴 Alta</option>
+            <option value="🟡 Media">🟡 Media</option>
+            <option value="🟢 Bassa">🟢 Bassa</option>
+          </select>
+        </div>
+        <button class="btn primary" onclick="addPianGoal()">+ Aggiungi obiettivo</button>
+      </div>
+    </div>
+
+    <!-- Riepilogo -->
+    <div class="card" id="pRiepilogo"></div>
+  </div>
 
   <!-- IMPOSTAZIONI -->
   <div id="impostazioni" class="section">
@@ -485,7 +593,7 @@ const tFP=d=>d.fisse.filter(x=>x.s==='p').reduce((a,x)=>a+(x.v||0),0);
 const tFC=d=>d.fisse.filter(x=>x.s==='c').reduce((a,x)=>a+(x.v||0),0);
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
 function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('overlay').classList.toggle('open')}
-function go(name,btn){document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));if(btn)btn.classList.add('active');document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));document.getElementById(name).classList.add('active');if(name==='panoramica'){renderPanoramica();renderMiniCal()}if(name==='dettaglio')renderMese();document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('open')}
+function go(name,btn){document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));if(btn)btn.classList.add('active');document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));document.getElementById(name).classList.add('active');if(name==='panoramica'){renderPanoramica();renderMiniCal()}if(name==='dettaglio')renderMese();if(name==='pianificazione')renderPian();document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('open')}
 function fillSelects(){['selMese','selMese2'].forEach(id=>{const s=document.getElementById(id);if(!s)return;const cur=s.value;s.innerHTML='';S.mesi.slice().reverse().forEach((m,i)=>{const o=document.createElement('option');o.value=m;o.textContent=m;if(cur?m===cur:i===0)o.selected=true;s.appendChild(o)})})}
 
 const CATS={'Trasporti':['benzina','macchina','bollo','treno','parcheggio','scalapay','assicurazione'],'Salute':['palestra','nutrizionista','psicologa','dentista','allenamento','farmacia','pillol','medico','dente','raggi','bromelina','proteine','integratori'],'Abbonamenti':['apple','spotify','disney','wi-fi','wifi','coursera','conto isp','iliad','telefono']};
@@ -682,6 +790,136 @@ function renderRisparmio(){
   let h='';mR.slice().reverse().forEach(m=>{const r=S.dati[m].risparmio,ob2=S.dati[m].obiettivo;let badge='';if(ob2>0)badge=r>=ob2?'<span class="kpi-tag tag-pos" style="font-size:11px">Raggiunto</span>':'<span class="kpi-tag tag-neg" style="font-size:11px">Sotto</span>';h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)"><span style="font-size:13px;color:var(--text-sec)">${m}</span><div style="display:flex;align-items:center;gap:8px"><span style="font-size:14px;font-weight:600">${fmt(r)}</span>${badge}</div></div>`});document.getElementById('risparmioList').innerHTML=h||'<div class="empty-state">Nessun dato</div>'}
 function saveOb(){const v=parseFloat(document.getElementById('obInput').value);if(!isNaN(v)){S.obiettivo=v;save();renderRisparmio();toast('Obiettivo aggiornato')}}
 function saveSaldo(){const v=parseFloat(document.getElementById('saldoInput').value);if(!isNaN(v)){S.saldoConto=v;save();renderRisparmio();toast('Saldo aggiornato')}}
+
+/* ═══ PIANIFICAZIONE ═══ */
+function loadPian(){
+  if(!S.pianificazione)S.pianificazione={guadagno:0,speseMedie:0,risparmioMedio:0,fondoMesi:6,fondoAttuale:0,fondoDove:'Conto deposito svincolabile',debiti:[],obiettivi:[]};
+  return S.pianificazione;
+}
+function renderPian(){
+  const p=loadPian();
+  document.getElementById('pGuadagno').value=p.guadagno||'';
+  document.getElementById('pSpeseMedie').value=p.speseMedie||'';
+  document.getElementById('pRisparmioMedio').value=p.risparmioMedio||'';
+  document.getElementById('pFondoMesi').value=p.fondoMesi||6;
+  document.getElementById('pFondoAttuale').value=p.fondoAttuale||'';
+  document.getElementById('pFondoDove').value=p.fondoDove||'Conto deposito svincolabile';
+  // Percentuale risparmio
+  const perc=p.guadagno>0?Math.round(p.risparmioMedio/p.guadagno*100):0;
+  document.getElementById('pPercRisparmio').innerHTML=p.guadagno>0?`${perc}% <span style="font-size:12px;color:var(--text-muted);font-weight:400">${perc>=20?'ottimo 🎉':perc>=10?'buono 👍':'da migliorare ⚠️'}</span>`:'–';
+  // Fondo emergenza
+  const fondoOb=(p.speseMedie||0)*(p.fondoMesi||6);
+  document.getElementById('pFondoObiettivo').textContent=fmt(fondoOb);
+  const fondoPerc=fondoOb>0?Math.min(100,Math.round((p.fondoAttuale||0)/fondoOb*100)):0;
+  const fondoOk=fondoPerc>=100;
+  document.getElementById('pFondoProgress').innerHTML=fondoOb>0?`
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);margin-bottom:4px"><span>${fmt(p.fondoAttuale||0)} accantonati</span><span>${fondoPerc}%</span></div>
+    <div style="height:8px;background:var(--surface2);border-radius:4px;overflow:hidden"><div style="height:100%;width:${fondoPerc}%;border-radius:4px;background:${fondoOk?'var(--green)':'var(--amber)'};transition:width .4s"></div></div>
+    ${fondoOk?'<div style="font-size:12px;color:var(--green);margin-top:6px;font-weight:600">✅ Fondo completo!</div>':'<div style="font-size:12px;color:var(--text-muted);margin-top:6px">Mancano ancora '+fmt(fondoOb-(p.fondoAttuale||0))+'</div>'}
+  `:'';
+  // Debiti
+  let dh='';
+  const totDebiti=(p.debiti||[]).reduce((a,x)=>a+(x.importo||0),0);
+  if(p.debiti&&p.debiti.length){
+    dh+=`<div style="font-size:13px;color:var(--text-sec);margin-bottom:10px">Totale debiti: <b style="color:var(--red)">${fmt(totDebiti)}</b></div>`;
+    p.debiti.forEach((d,i)=>{
+      dh+=`<div class="expense-row" id="pd_${i}"><span class="cat-icon" style="background:var(--red-bg);color:var(--red);font-size:12px">${d.tipo==='Mutuo'?'🏠':d.tipo==='Finanziamento auto'?'🚗':'💳'}</span><span class="expense-name">${d.desc||d.tipo}<span style="font-size:11px;color:var(--text-muted);margin-left:6px">${d.tipo}${d.rata?' · rata '+fmtD(d.rata)+'/mese':''}</span></span><span class="expense-amt" style="color:var(--red)">${fmt(d.importo)}</span><button class="expense-edit" onclick="editPianDebt(${i})">✏️</button><button class="expense-del" onclick="delPianDebt(${i})">🗑</button></div>`;
+    });
+  } else {dh='<div style="font-size:13px;color:var(--green);padding:8px 0">✅ Nessun debito — ottimo!</div>'}
+  document.getElementById('pDebtList').innerHTML=dh;
+  // Obiettivi
+  let gh='';
+  if(p.obiettivi&&p.obiettivi.length){
+    p.obiettivi.forEach((g,i)=>{
+      const gPerc=g.target>0?Math.min(100,Math.round((g.saved||0)/g.target*100)):0;
+      gh+=`<div class="card" style="margin-bottom:10px;padding:14px" id="pg_${i}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
+          <div style="flex:1;min-width:180px">
+            <div style="font-size:15px;font-weight:600">${g.name}</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:3px">${g.priority} · ${g.horizon}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:18px;font-weight:700;color:var(--blue)">${fmt(g.target)}</div>
+            <div style="font-size:12px;color:var(--text-muted)">${fmt(g.saved||0)} accumulati</div>
+          </div>
+          <div style="display:flex;gap:4px"><button class="expense-edit" onclick="editPianGoal(${i})">✏️</button><button class="expense-del" onclick="delPianGoal(${i})">🗑</button></div>
+        </div>
+        <div style="margin-top:10px;height:6px;background:var(--surface2);border-radius:3px;overflow:hidden"><div style="height:100%;width:${gPerc}%;border-radius:3px;background:var(--green);transition:width .4s"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);margin-top:4px"><span>${gPerc}%</span>${g.saved<g.target&&p.risparmioMedio>0?'<span>~'+Math.ceil((g.target-(g.saved||0))/p.risparmioMedio)+' mesi per raggiungerlo</span>':''}</div>
+      </div>`;
+    });
+  } else {gh='<div style="font-size:13px;color:var(--text-muted);padding:8px 0">Nessun obiettivo ancora — aggiungine uno!</div>'}
+  document.getElementById('pGoalList').innerHTML=gh;
+  // Riepilogo
+  const rateDebiti=(p.debiti||[]).reduce((a,x)=>a+(x.rata||0),0);
+  const disponibileMensile=(p.risparmioMedio||0)-rateDebiti;
+  document.getElementById('pRiepilogo').innerHTML=`
+    <div class="card-header"><span class="card-title">📊 Riepilogo mensile</span></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px">
+      <div style="padding:12px;background:var(--surface2);border-radius:var(--radius-sm);text-align:center">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">Guadagno</div>
+        <div style="font-size:18px;font-weight:700;color:var(--green)">${fmt(p.guadagno)}</div>
+      </div>
+      <div style="padding:12px;background:var(--surface2);border-radius:var(--radius-sm);text-align:center">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">Spese medie</div>
+        <div style="font-size:18px;font-weight:700;color:var(--red)">${fmt(p.speseMedie)}</div>
+      </div>
+      <div style="padding:12px;background:var(--surface2);border-radius:var(--radius-sm);text-align:center">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">Rate debiti</div>
+        <div style="font-size:18px;font-weight:700;color:${rateDebiti>0?'var(--red)':'var(--green)'}">${fmt(rateDebiti)}</div>
+      </div>
+      <div style="padding:12px;background:var(--surface2);border-radius:var(--radius-sm);text-align:center">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">Disponibile per obiettivi</div>
+        <div style="font-size:18px;font-weight:700;color:${disponibileMensile>=0?'var(--green)':'var(--red)'}">${fmt(disponibileMensile)}</div>
+      </div>
+    </div>
+  `;
+}
+function savePian(){
+  const p=loadPian();
+  p.guadagno=parseFloat(document.getElementById('pGuadagno').value)||0;
+  p.speseMedie=parseFloat(document.getElementById('pSpeseMedie').value)||0;
+  p.risparmioMedio=parseFloat(document.getElementById('pRisparmioMedio').value)||0;
+  p.fondoMesi=parseInt(document.getElementById('pFondoMesi').value)||6;
+  p.fondoAttuale=parseFloat(document.getElementById('pFondoAttuale').value)||0;
+  p.fondoDove=document.getElementById('pFondoDove').value;
+  S.pianificazione=p;save();renderPian();
+}
+function addPianDebt(){
+  const p=loadPian();
+  const tipo=document.getElementById('pDebtTipo').value;
+  const desc=document.getElementById('pDebtDesc').value.trim();
+  const importo=parseFloat(document.getElementById('pDebtAmt').value);
+  const rata=parseFloat(document.getElementById('pDebtRata').value)||0;
+  if(!importo||importo<=0){toast('Inserisci un importo');return}
+  if(!p.debiti)p.debiti=[];
+  p.debiti.push({tipo,desc:desc||tipo,importo,rata});
+  S.pianificazione=p;save();renderPian();
+  document.getElementById('pDebtDesc').value='';document.getElementById('pDebtAmt').value='';document.getElementById('pDebtRata').value='';
+  toast('Debito aggiunto');
+}
+function delPianDebt(i){loadPian().debiti.splice(i,1);save();renderPian();toast('Eliminato')}
+function editPianDebt(i){const p=loadPian();const d=p.debiti[i];const row=document.getElementById('pd_'+i);if(!row)return;
+  row.innerHTML=`<div class="inline-edit" style="width:100%"><input type="text" class="form-input" value="${d.desc}" id="pdN${i}" style="flex:1"><input type="number" class="form-input" value="${d.importo}" id="pdA${i}" step="0.01" style="max-width:90px"><input type="number" class="form-input" value="${d.rata||''}" id="pdR${i}" step="0.01" placeholder="Rata" style="max-width:80px"><button class="btn sm primary" onclick="savePianDebt(${i})">✓</button><button class="btn sm" onclick="renderPian()">✕</button></div>`}
+function savePianDebt(i){const p=loadPian();p.debiti[i].desc=document.getElementById('pdN'+i).value.trim();p.debiti[i].importo=parseFloat(document.getElementById('pdA'+i).value)||0;p.debiti[i].rata=parseFloat(document.getElementById('pdR'+i).value)||0;S.pianificazione=p;save();renderPian();toast('Modificato')}
+function addPianGoal(){
+  const p=loadPian();
+  const name=document.getElementById('pGoalName').value.trim();
+  const target=parseFloat(document.getElementById('pGoalTarget').value);
+  const saved=parseFloat(document.getElementById('pGoalSaved').value)||0;
+  const horizon=document.getElementById('pGoalHorizon').value;
+  const priority=document.getElementById('pGoalPriority').value;
+  if(!name||!target||target<=0){toast('Inserisci nome e importo');return}
+  if(!p.obiettivi)p.obiettivi=[];
+  p.obiettivi.push({name,target,saved,horizon,priority});
+  S.pianificazione=p;save();renderPian();
+  document.getElementById('pGoalName').value='';document.getElementById('pGoalTarget').value='';document.getElementById('pGoalSaved').value='';
+  toast('Obiettivo aggiunto!');
+}
+function delPianGoal(i){loadPian().obiettivi.splice(i,1);save();renderPian();toast('Eliminato')}
+function editPianGoal(i){const p=loadPian();const g=p.obiettivi[i];const card=document.getElementById('pg_'+i);if(!card)return;
+  card.innerHTML=`<div style="width:100%"><div class="form-grid"><div class="form-group"><label>Nome</label><input type="text" class="form-input form-input-sm" value="${g.name}" id="pgN${i}"></div><div class="form-group"><label>Target €</label><input type="number" class="form-input form-input-sm" value="${g.target}" id="pgT${i}" step="100"></div></div><div class="form-grid"><div class="form-group"><label>Accumulato €</label><input type="number" class="form-input form-input-sm" value="${g.saved||0}" id="pgS${i}" step="0.01"></div><div class="form-group"><label>Orizzonte</label><select class="form-input form-input-sm" id="pgH${i}"><option ${g.horizon==='1-2 anni'?'selected':''}>1-2 anni</option><option ${g.horizon==='3-5 anni'?'selected':''}>3-5 anni</option><option ${g.horizon==='5-10 anni'?'selected':''}>5-10 anni</option><option ${g.horizon==='10-20 anni'?'selected':''}>10-20 anni</option><option ${g.horizon==='20+ anni'?'selected':''}>20+ anni</option></select></div></div><div style="display:flex;gap:6px;margin-top:8px"><button class="btn sm primary" onclick="savePianGoal(${i})">Salva</button><button class="btn sm" onclick="renderPian()">Annulla</button></div></div>`}
+function savePianGoal(i){const p=loadPian();p.obiettivi[i].name=document.getElementById('pgN'+i).value.trim();p.obiettivi[i].target=parseFloat(document.getElementById('pgT'+i).value)||0;p.obiettivi[i].saved=parseFloat(document.getElementById('pgS'+i).value)||0;p.obiettivi[i].horizon=document.getElementById('pgH'+i).value;S.pianificazione=p;save();renderPian();toast('Modificato')}
 
 /* ═══ FAB ═══ */
 function toggleFab(){document.getElementById('fabMenu').classList.toggle('open')}
