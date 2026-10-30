@@ -355,6 +355,16 @@ html.dark .fab-option{background:#1e2440;border-color:#2d3555;color:#f1f5f9}
       </div>
     </div>
 
+    <!-- Bilancio personale -->
+    <div class="card">
+      <div class="card-header"><span class="card-title">🧮 Bilancio personale mensile</span></div>
+      <div class="form-grid">
+        <div class="form-group"><label>Spese cibo mensili stimate (€)</label><input type="number" class="form-input" id="pSpeseCibo" min="0" step="10" onchange="savePian()"></div>
+        <div class="form-group"><label>Risparmio già accantonato (€)</label><input type="number" class="form-input" id="pRisparmioGia" min="0" step="0.01" onchange="savePian()"></div>
+      </div>
+      <div id="pBilancio" style="margin-top:16px"></div>
+    </div>
+
     <!-- Riepilogo -->
     <div class="card" id="pRiepilogo"></div>
   </div>
@@ -793,7 +803,9 @@ function saveSaldo(){const v=parseFloat(document.getElementById('saldoInput').va
 
 /* ═══ PIANIFICAZIONE ═══ */
 function loadPian(){
-  if(!S.pianificazione)S.pianificazione={guadagno:0,speseMedie:0,risparmioMedio:0,fondoMesi:6,fondoAttuale:0,fondoDove:'Conto deposito svincolabile',debiti:[],obiettivi:[]};
+  if(!S.pianificazione)S.pianificazione={guadagno:0,speseMedie:0,risparmioMedio:0,fondoMesi:6,fondoAttuale:0,fondoDove:'Conto deposito svincolabile',debiti:[],obiettivi:[],speseCibo:200,risparmioGia:0};
+  if(S.pianificazione.speseCibo===undefined)S.pianificazione.speseCibo=200;
+  if(S.pianificazione.risparmioGia===undefined)S.pianificazione.risparmioGia=0;
   return S.pianificazione;
 }
 function renderPian(){
@@ -804,6 +816,8 @@ function renderPian(){
   document.getElementById('pFondoMesi').value=p.fondoMesi||6;
   document.getElementById('pFondoAttuale').value=p.fondoAttuale||'';
   document.getElementById('pFondoDove').value=p.fondoDove||'Conto deposito svincolabile';
+  document.getElementById('pSpeseCibo').value=p.speseCibo||200;
+  document.getElementById('pRisparmioGia').value=p.risparmioGia||'';
   // Percentuale risparmio
   const perc=p.guadagno>0?Math.round(p.risparmioMedio/p.guadagno*100):0;
   document.getElementById('pPercRisparmio').innerHTML=p.guadagno>0?`${perc}% <span style="font-size:12px;color:var(--text-muted);font-weight:400">${perc>=20?'ottimo 🎉':perc>=10?'buono 👍':'da migliorare ⚠️'}</span>`:'–';
@@ -850,6 +864,41 @@ function renderPian(){
     });
   } else {gh='<div style="font-size:13px;color:var(--text-muted);padding:8px 0">Nessun obiettivo ancora — aggiungine uno!</div>'}
   document.getElementById('pGoalList').innerHTML=gh;
+  // Bilancio personale
+  const lastMese=S.mesi[S.mesi.length-1];
+  const lastD=lastMese?S.dati[lastMese]:null;
+  const speseFisseMensili=lastD?tF(lastD):0;
+  const speseCibo=p.speseCibo||200;
+  const rispGia=p.risparmioGia||0;
+  const guadagno=p.guadagno||0;
+  const rimanente=guadagno-speseFisseMensili-speseCibo-((p.risparmioMedio||0));
+  document.getElementById('pBilancio').innerHTML=`
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--surface2);border-radius:10px">
+        <span style="font-size:13px;color:var(--text-sec)">💵 Guadagno mensile</span>
+        <span style="font-size:16px;font-weight:700;color:var(--green)">${fmt(guadagno)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--red-bg);border-radius:10px">
+        <span style="font-size:13px;color:var(--text-sec)">🔒 Spese fisse</span>
+        <span style="font-size:16px;font-weight:700;color:var(--red)">-${fmt(speseFisseMensili)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--red-bg);border-radius:10px">
+        <span style="font-size:13px;color:var(--text-sec)">🍕 Spese cibo</span>
+        <span style="font-size:16px;font-weight:700;color:var(--red)">-${fmt(speseCibo)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--blue-bg);border-radius:10px">
+        <span style="font-size:13px;color:var(--text-sec)">🐷 Risparmio già accantonato</span>
+        <span style="font-size:16px;font-weight:700;color:var(--blue)">${fmt(rispGia)}</span>
+      </div>
+      <div style="height:1px;background:var(--border);margin:4px 0"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:14px;background:${rimanente>=0?'var(--green)':'var(--red)'};border-radius:10px;color:#fff">
+        <span style="font-size:14px;font-weight:600">✨ Rimanente per piacere</span>
+        <span style="font-size:20px;font-weight:700">${fmt(rimanente)}</span>
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--text-muted);margin-top:8px">Calcolato: guadagno − spese fisse − cibo − risparmio</div>
+  `;
+
   // Riepilogo
   const rateDebiti=(p.debiti||[]).reduce((a,x)=>a+(x.rata||0),0);
   const disponibileMensile=(p.risparmioMedio||0)-rateDebiti;
@@ -883,6 +932,8 @@ function savePian(){
   p.fondoMesi=parseInt(document.getElementById('pFondoMesi').value)||6;
   p.fondoAttuale=parseFloat(document.getElementById('pFondoAttuale').value)||0;
   p.fondoDove=document.getElementById('pFondoDove').value;
+  p.speseCibo=parseFloat(document.getElementById('pSpeseCibo').value)||200;
+  p.risparmioGia=parseFloat(document.getElementById('pRisparmioGia').value)||0;
   S.pianificazione=p;save();renderPian();
 }
 function addPianDebt(){
